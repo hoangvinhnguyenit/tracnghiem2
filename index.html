@@ -32,7 +32,7 @@ button:disabled{opacity:.4;cursor:default}
 .score{font-size:3rem;font-weight:700;color:var(--ac);line-height:1.1}
 .tag{display:inline-block;font-size:.78rem;background:var(--acs);color:var(--ac);padding:2px 10px;border-radius:99px;margin-bottom:10px}
 .ex{background:var(--acs);border-radius:10px;padding:10px 12px;font-size:.92rem;margin-top:8px}
-.hide{display:none}#tm{font-variant-numeric:tabular-nums;color:var(--ac)}#tm.low{color:var(--no)}
+.hide{display:none}body.ex{-webkit-user-select:none;user-select:none}#tm{font-variant-numeric:tabular-nums;color:var(--ac)}#tm.low{color:var(--no)}
 </style>
 </head>
 <body>
@@ -41,6 +41,7 @@ button:disabled{opacity:.4;cursor:default}
 <h1>Trắc nghiệm Mạng máy tính</h1>
 <p class="mu">Chương 1: Giới thiệu mạng máy tính · Chương 2: Mô hình OSI – Bộ giao thức TCP/IP</p>
 <p>Mỗi câu 0,25 điểm (thang điểm 10). Thời gian làm bài là 20 phút, hết giờ bài sẽ tự động nộp. Mỗi người chỉ được làm một lần. Bạn có thể quay lại sửa đáp án trước khi nộp.</p>
+<p class="mu" style="color:var(--no)">Quy định: trong lúc làm bài, nếu chuyển tab, rời khỏi cửa sổ, chụp màn hình, sao chép nội dung hoặc mở công cụ nhà phát triển thì bài thi sẽ bị khóa và nộp tự động với các câu đã làm.</p>
 <button class="p" onclick="startQuiz()">Bắt đầu làm bài</button>
 </div>
 
@@ -64,7 +65,7 @@ button:disabled{opacity:.4;cursor:default}
 <div class="card" style="text-align:center">
 <div class="mu">Kết quả của bạn</div>
 <div class="score" id="sc"></div>
-<p id="detail"></p><p id="rank" class="mu"></p>
+<p id="detail"></p><p id="rank" class="mu"></p><p id="lk" style="color:var(--no);font-weight:600"></p>
 
 </div>
 </div>
@@ -126,10 +127,11 @@ function startQuiz(){
  Q=shuf(D).map(d=>{const o=shuf([0,1,2,3]).map(i=>d[2+i]);return{tag:d[0],q:d[1],o,c:o.indexOf(d[2]),ex:d[6]}});
  ans=Q.map(()=>-1);cur=0;done=false;T0=Date.now();save();begin();
 }
-const KEY="tn_mmt_v1",LIMIT=20*60*1000;let T0=0,timer=null;
-function save(){try{localStorage.setItem(KEY,JSON.stringify({Q,ans,T0,done}))}catch(e){}}
+const KEY="tn_mmt_v1",LIMIT=20*60*1000;let T0=0,timer=null,active=false,leaving=false,lk="";
+function save(){try{localStorage.setItem(KEY,JSON.stringify({Q,ans,T0,done,lk}))}catch(e){}}
 function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
 function begin(){
+ active=true;document.body.classList.add("ex");
  $("start").classList.add("hide");$("result").classList.add("hide");$("quiz").classList.remove("hide");
  render();tick();timer=setInterval(tick,1000);window.scrollTo(0,0);
 }
@@ -157,7 +159,7 @@ function submitQuiz(){
  if(un&&!window._cf){window._cf=1;$("warn").textContent="Bạn còn "+un+" câu chưa trả lời. Bấm Nộp bài lần nữa để xác nhận.";return}
  finish();
 }
-function finish(){done=true;clearInterval(timer);save();showResult()}
+function finish(){active=false;document.body.classList.remove("ex");done=true;clearInterval(timer);save();showResult()}
 function showResult(){
  const un=ans.filter(x=>x<0).length;
  let ok=0;Q.forEach((q,i)=>{if(ans[i]===q.c)ok++});
@@ -166,9 +168,23 @@ function showResult(){
  $("detail").textContent="Đúng "+ok+" / "+Q.length+" câu · Sai "+(Q.length-ok-un)+" · Bỏ trống "+un;
  $("rank").textContent=pts>=8.5?"Xếp loại: Giỏi":pts>=7?"Xếp loại: Khá":pts>=5?"Xếp loại: Trung bình":"Chưa đạt – hãy ôn lại và thử lại nhé!";
  $("quiz").classList.add("hide");$("result").classList.remove("hide");
+ $("lk").textContent=lk?"⚠ Bài thi đã bị khóa và nộp tự động do vi phạm: "+lk+".":"";
  window.scrollTo(0,0);
 }
-(function(){const s=load();if(s&&s.Q&&s.Q.length){Q=s.Q;ans=s.ans;T0=s.T0;done=s.done;cur=0;
+function lock(r){if(!active||done||leaving)return;lk=r;finish()}
+document.addEventListener("visibilitychange",()=>{if(document.hidden)lock("chuyển tab hoặc thu nhỏ trình duyệt")});
+window.addEventListener("blur",()=>lock("rời khỏi cửa sổ làm bài"));
+window.addEventListener("beforeunload",()=>{leaving=true});
+window.addEventListener("pagehide",()=>{leaving=true});
+function shot(e){if(!active)return;const k=(e.key||"").toLowerCase();
+ if(k==="printscreen"||(e.metaKey&&e.shiftKey&&k==="s")||(e.ctrlKey&&e.shiftKey&&k==="s")){try{navigator.clipboard.writeText("")}catch(x){}e.preventDefault();lock("chụp màn hình")}}
+document.addEventListener("keyup",shot);
+document.addEventListener("keydown",e=>{if(!active)return;shot(e);const k=(e.key||"").toLowerCase();
+ if(k==="f12"||(e.ctrlKey&&e.shiftKey&&["i","j","c"].includes(k))||(e.ctrlKey&&["p","u","s"].includes(k))){e.preventDefault();lock("sử dụng phím tắt bị cấm")}});
+["copy","cut"].forEach(t=>document.addEventListener(t,e=>{if(active){e.preventDefault();lock("sao chép nội dung")}}));
+document.addEventListener("contextmenu",e=>{if(active)e.preventDefault()});
+document.addEventListener("dragstart",e=>{if(active)e.preventDefault()});
+(function(){const s=load();if(s&&s.Q&&s.Q.length){Q=s.Q;ans=s.ans;T0=s.T0;done=s.done;lk=s.lk||"";cur=0;
  if(done){$("start").classList.add("hide");$("quiz").classList.add("hide");$("result").classList.remove("hide");showResult()}else begin()}})();
 </script>
 </body>
