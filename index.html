@@ -40,7 +40,7 @@ button:disabled{opacity:.4;cursor:default}
 <div id="start" class="card">
 <h1>Trắc nghiệm Mạng máy tính</h1>
 <p class="mu">Chương 1: Giới thiệu mạng máy tính · Chương 2: Mô hình OSI – Bộ giao thức TCP/IP</p>
-<p>Mỗi câu 0,25 điểm (thang điểm 10). Thời gian làm bài là 20 phút, hết giờ bài sẽ tự động nộp. Mỗi người chỉ được làm một lần. Bạn có thể quay lại sửa đáp án trước khi nộp.</p>
+<p>Mỗi câu 0,25 điểm (thang điểm 10). Thời gian làm bài là 20 phút, hết giờ bài sẽ tự động nộp. Bạn có thể làm lại không giới hạn số lần. Bạn có thể quay lại sửa đáp án trước khi nộp.</p>
 <p class="mu" style="color:var(--no)">Quy định: trong lúc làm bài, nếu chuyển tab, rời khỏi cửa sổ, chụp màn hình, sao chép nội dung hoặc mở công cụ nhà phát triển thì bài thi sẽ bị khóa và nộp tự động với các câu đã làm.</p>
 <button class="p" onclick="startQuiz()">Bắt đầu làm bài</button>
 </div>
@@ -65,7 +65,7 @@ button:disabled{opacity:.4;cursor:default}
 <div class="card" style="text-align:center">
 <div class="mu">Kết quả của bạn</div>
 <div class="score" id="sc"></div>
-<p id="detail"></p><p id="rank" class="mu"></p><p id="lk" style="color:var(--no);font-weight:600"></p>
+<p id="detail"></p><p id="rank" class="mu"></p><p id="lk" style="color:var(--no);font-weight:600"></p><button class="p" onclick="startQuiz()">Làm lại</button>
 
 </div>
 </div>
@@ -125,7 +125,7 @@ const $=id=>document.getElementById(id);
 function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function startQuiz(){
  Q=shuf(D).map(d=>{const o=shuf([0,1,2,3]).map(i=>d[2+i]);return{tag:d[0],q:d[1],o,c:o.indexOf(d[2]),ex:d[6]}});
- ans=Q.map(()=>-1);cur=0;done=false;T0=Date.now();save();begin();
+ ans=Q.map(()=>-1);cur=0;done=false;lk="";T0=Date.now();save();begin();
 }
 const KEY="tn_mmt_v1",LIMIT=20*60*1000;let T0=0,timer=null,active=false,leaving=false,lk="";
 function save(){try{localStorage.setItem(KEY,JSON.stringify({Q,ans,T0,done,lk}))}catch(e){}}
