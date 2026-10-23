@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trắc nghiệm Mạng máy tính</title>
+<style>
+:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f7fb;--card:#fff;--tx:#1b2333;--mu:#667085;--br:#d9dfea;--ac:#2557d6;--acs:#e6edfd;--ok:#157a43;--oks:#e3f6ea;--no:#b42318;--nos:#fde8e6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#12161f;--card:#1b212e;--tx:#e8ecf4;--mu:#9aa5b8;--br:#2f3849;--ac:#7da3ff;--acs:#243255;--ok:#5fd38d;--oks:#173626;--no:#ff8f85;--nos:#41201d}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#12161f;--card:#1b212e;--tx:#e8ecf4;--mu:#9aa5b8;--br:#2f3849;--ac:#7da3ff;--acs:#243255;--ok:#5fd38d;--oks:#173626;--no:#ff8f85;--nos:#41201d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:720px;margin:0 auto;padding:20px 16px 48px}
+.card{background:var(--card);border:1px solid var(--br);border-radius:14px;padding:20px;margin-bottom:14px}
+h1{font-size:1.6rem;margin:0 0 6px}h2{font-size:1.15rem;margin:0 0 12px;line-height:1.45}
+.mu{color:var(--mu);font-size:.92rem}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--br);background:var(--card);color:var(--tx);padding:10px 16px}
+button.p{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+button:disabled{opacity:.4;cursor:default}
+.opt{display:block;width:100%;text-align:left;margin:0 0 10px;padding:12px 14px}
+.opt.sel{background:var(--acs);border-color:var(--ac)}
+.opt.ok{background:var(--oks);border-color:var(--ok)}
+.opt.no{background:var(--nos);border-color:var(--no)}
+.bar{height:8px;background:var(--br);border-radius:8px;overflow:hidden;margin:8px 0 14px}
+.bar i{display:block;height:100%;background:var(--ac);transition:width .2s}
+.row{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:6px}
+.grid button{padding:6px 0;font-size:.9rem}
+.grid .done{background:var(--acs);border-color:var(--ac)}.grid .cur{outline:2px solid var(--ac)}
+.grid .ok{background:var(--oks);border-color:var(--ok)}.grid .no{background:var(--nos);border-color:var(--no)}
+.score{font-size:3rem;font-weight:700;color:var(--ac);line-height:1.1}
+.tag{display:inline-block;font-size:.78rem;background:var(--acs);color:var(--ac);padding:2px 10px;border-radius:99px;margin-bottom:10px}
+.ex{background:var(--acs);border-radius:10px;padding:10px 12px;font-size:.92rem;margin-top:8px}
+.hide{display:none}#tm{font-variant-numeric:tabular-nums;color:var(--ac)}#tm.low{color:var(--no)}
+</style>
+</head>
+<body>
+<div class="w">
+<div id="start" class="card">
+<h1>Trắc nghiệm Mạng máy tính</h1>
+<p class="mu">Chương 1: Giới thiệu mạng máy tính · Chương 2: Mô hình OSI – Bộ giao thức TCP/IP</p>
+<p>Mỗi câu 0,25 điểm (thang điểm 10). Thời gian làm bài là 20 phút, hết giờ bài sẽ tự động nộp. Mỗi người chỉ được làm một lần. Bạn có thể quay lại sửa đáp án trước khi nộp.</p>
+<button class="p" onclick="startQuiz()">Bắt đầu làm bài</button>
+</div>
+
+<div id="quiz" class="hide">
+<div class="card">
+<div class="row"><span id="prog" class="mu"></span><b id="tm"></b><span id="cnt" class="mu"></span></div>
+<div class="bar"><i id="fill"></i></div>
+<span id="tag" class="tag"></span>
+<h2 id="q"></h2>
+<div id="opts"></div>
+<div class="row" style="margin-top:6px">
+<button id="prev" onclick="go(-1)">← Câu trước</button>
+<button id="next" class="p" onclick="go(1)">Câu sau →</button>
+</div>
+</div>
+<div class="card"><div class="mu" style="margin-bottom:8px">Danh sách câu hỏi</div><div id="nav" class="grid"></div>
+<div style="margin-top:14px"><div id="warn" class="mu" style="color:var(--no);margin-bottom:8px"></div><button class="p" onclick="submitQuiz()">Nộp bài</button></div></div>
+</div>
+
+<div id="result" class="hide">
+<div class="card" style="text-align:center">
+<div class="mu">Kết quả của bạn</div>
+<div class="score" id="sc"></div>
+<p id="detail"></p><p id="rank" class="mu"></p>
+
+</div>
+</div>
+</div>
+
+<script>
+// [chương, câu hỏi, đáp án đúng, sai1, sai2, sai3, giải thích]
+const C1="Chương 1",C2="Chương 2 – OSI",C3="Chương 2 – TCP/IP";
+const D=[
+[C1,"Điểm khác biệt đặc trưng giữa mạng WAN và mạng LAN là:","WAN thường dùng đường truyền thuê của nhà cung cấp dịch vụ, tốc độ thấp hơn và độ trễ cao hơn LAN","WAN luôn có tốc độ cao hơn LAN vì dùng cáp quang","WAN chỉ dùng trong một tòa nhà và do tổ chức tự lắp đặt","WAN không cần thiết bị định tuyến","LAN do tổ chức tự sở hữu hạ tầng, tốc độ cao; WAN đi qua hạ tầng của nhà cung cấp nên chậm hơn, trễ lớn hơn."],
+[C1,"Một trường đại học nối mạng giữa các tòa nhà trong khuôn viên bằng cáp quang riêng của trường. Đây là loại mạng nào?","CAN","MAN","WAN","GAN","CAN kết nối nhiều LAN trong một khuôn viên và thuộc quyền quản lý của một tổ chức."],
+[C1,"Phát biểu nào đúng khi so sánh MAN với CAN?","MAN có phạm vi cỡ một thành phố và thường do nhà cung cấp dịch vụ vận hành, còn CAN thuộc một tổ chức","MAN nhỏ hơn CAN và chỉ nằm trong một phòng","MAN và CAN hoàn toàn giống nhau","MAN chỉ dùng cho kết nối vệ tinh","Phạm vi: LAN < CAN < MAN < WAN < GAN."],
+[C1,"Internet được hiểu chính xác nhất là:","Mạng của các mạng (internetwork) kết nối toàn cầu dựa trên bộ giao thức TCP/IP","Một mạng LAN rất lớn của một công ty","Một phần mềm trình duyệt","Một mạng chỉ dùng cáp quang biển","Internet liên kết hàng triệu mạng thành viên bằng TCP/IP."],
+[C1,"Điểm khác biệt chính giữa hub và switch là:","Switch học địa chỉ MAC và chỉ chuyển khung ra cổng đích, hub phát lại tới mọi cổng","Hub thông minh hơn switch vì lọc được địa chỉ MAC","Hub hoạt động ở lớp Network còn switch ở lớp Physical","Switch không thể nối nhiều máy tính","Hub lặp tín hiệu ra mọi cổng (một miền xung đột), switch chuyển mạch theo bảng MAC."],
+[C1,"Router khác switch ở điểm nào?","Router kết nối các mạng khác nhau và chọn đường dựa trên địa chỉ IP","Router chỉ chuyển khung trong cùng một LAN dựa trên địa chỉ MAC","Router chỉ khuếch đại tín hiệu điện","Router không có bảng định tuyến","Router hoạt động ở lớp Network với bảng định tuyến."],
+[C1,"Modem thực hiện chức năng nào?","Điều chế và giải điều chế tín hiệu để truyền dữ liệu số qua đường truyền của nhà mạng","Lưu trữ dữ liệu người dùng trong bộ nhớ đệm","Phân giải tên miền","Cấp địa chỉ MAC cho máy tính","Modem = MOdulator + DEModulator."],
+[C1,"So với cáp xoắn đôi UTP, ưu điểm nổi bật của cáp quang là:","Băng thông lớn, khoảng cách xa và miễn nhiễm nhiễu điện từ","Giá rẻ và dễ bấm đầu nối hơn","Truyền được bằng tín hiệu điện","Giới hạn khoảng cách 100 m","UTP rẻ nhưng chịu nhiễu và giới hạn ~100 m; cáp quang truyền ánh sáng nên không bị nhiễu điện từ."],
+[C1,"So với cáp quang đa mode, cáp quang đơn mode (single-mode) có đặc điểm:","Lõi nhỏ, truyền được khoảng cách xa hơn","Lõi lớn, dùng cho khoảng cách ngắn","Chỉ truyền được tín hiệu điện","Không dùng laser","Single-mode có lõi nhỏ, ít tán sắc nên phù hợp đường dài."],
+[C1,"Nhược điểm của môi trường truyền không dây (wireless) so với cáp là:","Dễ bị nhiễu, bảo mật kém hơn và băng thông chia sẻ giữa các thiết bị","Không thể di chuyển thiết bị","Luôn có độ trễ bằng 0","Không cần chuẩn giao tiếp","Sóng vô tuyến lan truyền tự do nên dễ nhiễu và dễ bị nghe lén."],
+[C1,"Thiết bị nào sau đây KHÔNG phải là thiết bị đầu cuối?","Switch","Máy tính xách tay","Máy in mạng","Điện thoại thông minh","Switch là thiết bị mạng trung gian, không phải nguồn hay đích của dữ liệu người dùng."],
+[C1,"Mạng Ethernet có dây và Wi-Fi lần lượt tuân theo chuẩn IEEE nào?","802.3 và 802.11","802.11 và 802.3","802.1Q và 802.15","802.5 và 802.16","IEEE 802.3 là Ethernet, 802.11 là WLAN."],
+[C1,"Trong mô hình client-server, so với mạng ngang hàng (peer-to-peer):","Tài nguyên và quản lý tập trung ở máy chủ, dễ kiểm soát và bảo mật hơn","Mọi máy đều ngang quyền và không cần máy chủ","Không thể mở rộng quy mô","Không dùng giao thức mạng","Client-server tập trung dịch vụ, phù hợp mạng lớn."],
+[C1,"Phân loại mạng theo phạm vi địa lý tăng dần là:","LAN, CAN, MAN, WAN, GAN","LAN, MAN, CAN, WAN, GAN","CAN, LAN, MAN, GAN, WAN","LAN, CAN, WAN, MAN, GAN","GAN là phạm vi lớn nhất, toàn cầu."],
+
+[C2,"Địa chỉ MAC có độ dài và đặc điểm nào?","48 bit, gắn với card mạng, dùng để chuyển khung trong cùng một mạng","32 bit, do nhà mạng cấp động","128 bit, phân cấp theo mạng con","64 bit, dùng để định tuyến liên mạng","MAC là địa chỉ vật lý 48 bit ở lớp Data Link."],
+[C2,"Trường FCS (CRC) dùng để phát hiện lỗi nằm ở đâu?","Phần trailer của frame ở lớp Data Link","Header của segment TCP","Header IP","Lớp Session","Lớp 2 thêm trailer chứa FCS để bên nhận kiểm tra lỗi bit."],
+[C2,"Đặc tả về đầu nối RJ-45, mức điện áp và tốc độ bit thuộc lớp nào?","Physical","Data Link","Network","Transport","Lớp 1 định nghĩa đặc tính điện, cơ, chức năng."],
+[C2,"Khi gói tin đi qua một router giữa hai mạng, điều gì xảy ra với địa chỉ?","Địa chỉ IP nguồn và đích được giữ nguyên, còn địa chỉ MAC thay đổi theo từng chặng","Cả IP và MAC đều giữ nguyên","IP thay đổi, MAC giữ nguyên","Cả hai bị xóa","IP là địa chỉ đầu cuối, MAC chỉ có ý nghĩa trong một liên kết."],
+[C2,"Chức năng đặt điểm đồng bộ (checkpoint) để khôi phục khi truyền tệp lớn bị gián đoạn thuộc lớp nào?","Session","Presentation","Transport","Network","Lớp Session quản lý hội thoại và đồng bộ hóa."],
+[C2,"Mã hóa, nén dữ liệu và chuyển đổi bộ mã ký tự (ví dụ ASCII – EBCDIC) thuộc lớp nào của OSI?","Presentation","Session","Application","Data Link","Lớp 6 lo cú pháp và biểu diễn dữ liệu."],
+[C2,"Card mạng nhận một frame có FCS không khớp. Frame bị loại bỏ ở lớp nào?","Data Link","Network","Transport","Application","Kiểm tra FCS là chức năng lớp 2."],
+[C2,"Thứ tự xử lý khi bên nhận giải đóng gói (de-encapsulation) là:","Physical → Data Link → Network → Transport → ... → Application","Application → ... → Transport → Network → Data Link → Physical","Network → Physical → Transport → Data Link","Transport → Network → Physical → Data Link","Bên gửi đóng gói từ trên xuống, bên nhận giải đóng gói từ dưới lên."],
+[C2,"Thứ tự đúng của PDU khi dữ liệu đi từ lớp Application xuống Physical là:","Data → Segment → Packet → Frame → Bits","Data → Packet → Segment → Frame → Bits","Data → Frame → Packet → Segment → Bits","Data → Segment → Frame → Packet → Bits","Transport: segment; Network: packet; Data Link: frame."],
+[C2,"Lợi ích cốt lõi của việc chia mạng thành các lớp trong mô hình OSI là:","Các lớp độc lập, chuẩn hóa giao diện, dễ phát triển và khắc phục sự cố","Tăng tốc độ đường truyền vật lý","Loại bỏ nhu cầu dùng giao thức","Bắt buộc mọi hãng dùng cùng phần cứng","Mỗi lớp chỉ cần biết giao diện với lớp kề."],
+[C2,"Khái niệm giao tiếp ngang hàng (peer-to-peer) giữa các lớp OSI nghĩa là:","Lớp N của máy gửi giao tiếp logic với lớp N của máy nhận thông qua header của lớp đó","Lớp N giao tiếp trực tiếp với lớp N+2 cùng máy","Chỉ lớp Physical mới có giao tiếp ngang hàng","Hai máy chỉ giao tiếp ở lớp Application","Header lớp N do bên gửi thêm vào được lớp N bên nhận xử lý."],
+[C2,"Lệnh ping thành công tới một máy ở mạng khác cho biết điều gì?","Các lớp 1–3 (tới Network) giữa hai máy hoạt động, chưa chắc dịch vụ ở lớp trên chạy","Máy đích chắc chắn đang chạy web server","Lớp Application hoạt động bình thường","Chỉ lớp Physical hoạt động","Ping dùng ICMP (lớp Network), không kiểm tra cổng hay ứng dụng."],
+[C2,"Số hiệu cổng (port) dùng để làm gì và thuộc lớp nào?","Xác định tiến trình ứng dụng nhận dữ liệu, thuộc lớp Transport","Xác định card mạng, thuộc lớp Data Link","Xác định mạng đích, thuộc lớp Network","Xác định bộ mã hóa, thuộc lớp Presentation","Cặp IP và port định danh một điểm cuối kết nối."],
+[C2,"Điểm khác biệt giữa địa chỉ IP và địa chỉ MAC là:","IP là địa chỉ logic phân cấp dùng định tuyến, MAC là địa chỉ vật lý dùng trong một mạng","IP là địa chỉ vật lý, MAC là địa chỉ logic","Cả hai đều do người dùng đặt tùy ý và không phân cấp","IP chỉ dùng ở lớp Data Link","IP có phần mạng và phần máy nên định tuyến được."],
+[C2,"Switch lớp 2 xây dựng bảng chuyển mạch bằng cách:","Học địa chỉ MAC nguồn của các frame nhận được trên từng cổng","Học địa chỉ IP nguồn của gói tin","Tra cứu DNS","Học số hiệu cổng TCP","Bảng MAC ánh xạ địa chỉ MAC với cổng."],
+[C2,"Chức năng điều khiển luồng (flow control) và phân đoạn dữ liệu đầu cuối chủ yếu do lớp nào đảm nhiệm?","Transport","Network","Session","Physical","TCP dùng cửa sổ trượt, phân đoạn và đánh số thứ tự."],
+
+[C3,"Quá trình bắt tay ba bước (three-way handshake) của TCP gồm:","SYN → SYN-ACK → ACK","SYN → ACK → FIN","ACK → SYN → SYN-ACK","FIN → ACK → SYN","Bước này thiết lập kết nối và đồng bộ số thứ tự."],
+[C3,"So sánh tiêu đề của TCP và UDP:","UDP có header cố định 8 byte, TCP tối thiểu 20 byte","UDP có header lớn hơn TCP","Cả hai đều có header 8 byte","UDP có header 40 byte","UDP đơn giản nên ít phí tổn."],
+[C3,"Dải cổng well-known và cổng của HTTPS là:","0–1023 và 443","1024–49151 và 80","49152–65535 và 25","0–1023 và 21","HTTP dùng 80, HTTPS dùng 443, SMTP 25."],
+[C3,"Giao thức ARP có chức năng gì?","Ánh xạ địa chỉ IP sang địa chỉ MAC trong cùng mạng","Ánh xạ tên miền sang địa chỉ IP","Cấp địa chỉ IP động","Mã hóa gói tin","ARP giúp biết MAC của máy đích khi chỉ có IP."],
+[C3,"Giao thức IP ở lớp Internet có đặc điểm nào?","Không kết nối, không bảo đảm tin cậy (best effort)","Hướng kết nối, đảm bảo tin cậy","Chỉ dùng trong mạng LAN","Thực hiện kiểm soát tắc nghẽn đầu cuối","Độ tin cậy do TCP ở lớp trên đảm nhiệm."],
+[C3,"Gói tin IP khi truyền trên mạng Ethernet được xử lý như thế nào?","Được đóng gói vào payload của frame Ethernet ở lớp Network Access","Gói tin IP chứa luôn frame Ethernet","Ethernet bỏ qua gói tin IP","IP và Ethernet nằm cùng một lớp","Mỗi lớp đóng gói PDU lớp trên làm payload."],
+[C3,"Ứng dụng nào dưới đây phù hợp nhất để dùng UDP?","Truyền thoại/video thời gian thực (VoIP, streaming)","Tải tệp tài chính cần toàn vẹn","Gửi email","Đăng nhập từ xa bằng SSH","Ứng dụng thời gian thực ưu tiên độ trễ thấp hơn độ tin cậy."],
+[C3,"Mô hình TCP/IP khác OSI ở điểm nào?","Gộp Session, Presentation, Application thành lớp Application; gộp Physical và Data Link thành Network Access","Có nhiều lớp hơn OSI","Có lớp Session riêng","Không có lớp Transport","TCP/IP có 4 lớp, OSI có 7 lớp."],
+[C3,"Cặp giao thức nào sau đây đều thuộc lớp Application của TCP/IP?","HTTP và DNS","TCP và UDP","IP và ICMP","ARP và Ethernet","HTTP, DNS, SMTP, FTP là giao thức ứng dụng."],
+[C3,"Cơ chế cửa sổ trượt (sliding window) của TCP dùng để:","Điều khiển luồng, giới hạn lượng dữ liệu gửi khi chưa nhận xác nhận","Định tuyến gói tin","Phân giải tên miền","Mã hóa dữ liệu","Bên nhận thông báo kích thước cửa sổ để tránh bị quá tải."]
+];
+
+const L=["A","B","C","D"];
+let Q=[],ans=[],cur=0,done=false;
+const $=id=>document.getElementById(id);
+function shuf(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function startQuiz(){
+ Q=shuf(D).map(d=>{const o=shuf([0,1,2,3]).map(i=>d[2+i]);return{tag:d[0],q:d[1],o,c:o.indexOf(d[2]),ex:d[6]}});
+ ans=Q.map(()=>-1);cur=0;done=false;T0=Date.now();save();begin();
+}
+const KEY="tn_mmt_v1",LIMIT=20*60*1000;let T0=0,timer=null;
+function save(){try{localStorage.setItem(KEY,JSON.stringify({Q,ans,T0,done}))}catch(e){}}
+function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
+function begin(){
+ $("start").classList.add("hide");$("result").classList.add("hide");$("quiz").classList.remove("hide");
+ render();tick();timer=setInterval(tick,1000);window.scrollTo(0,0);
+}
+function tick(){
+ if(done)return;
+ const left=Math.max(0,LIMIT-(Date.now()-T0));
+ const m=Math.floor(left/60000),s=Math.floor(left%60000/1000);
+ $("tm").textContent="⏱ "+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+ $("tm").className=left<60000?"low":"";
+ if(left<=0)finish();
+}
+function render(){window._cf=0;$("warn").textContent="";
+ const q=Q[cur],n=Q.length,a=ans.filter(x=>x>=0).length;
+ $("prog").textContent="Câu "+(cur+1)+" / "+n;$("cnt").textContent="Đã trả lời: "+a+" / "+n;
+ $("fill").style.width=(a/n*100)+"%";$("tag").textContent=q.tag;$("q").textContent=(cur+1)+". "+q.q;
+ $("opts").innerHTML="";
+ q.o.forEach((t,i)=>{const b=document.createElement("button");b.className="opt"+(ans[cur]===i?" sel":"");b.textContent=L[i]+". "+t;b.onclick=()=>{ans[cur]=i;save();render()};$("opts").appendChild(b)});
+ $("prev").disabled=cur===0;$("next").disabled=cur===n-1;
+ $("nav").innerHTML="";
+ Q.forEach((_,i)=>{const b=document.createElement("button");b.textContent=i+1;b.className=(ans[i]>=0?"done ":"")+(i===cur?"cur":"");b.onclick=()=>{cur=i;render()};$("nav").appendChild(b)});
+}
+function go(d){cur=Math.max(0,Math.min(Q.length-1,cur+d));render();window.scrollTo(0,0)}
+function submitQuiz(){
+ const un=ans.filter(x=>x<0).length;
+ if(un&&!window._cf){window._cf=1;$("warn").textContent="Bạn còn "+un+" câu chưa trả lời. Bấm Nộp bài lần nữa để xác nhận.";return}
+ finish();
+}
+function finish(){done=true;clearInterval(timer);save();showResult()}
+function showResult(){
+ const un=ans.filter(x=>x<0).length;
+ let ok=0;Q.forEach((q,i)=>{if(ans[i]===q.c)ok++});
+ const pts=ok*10/Q.length;
+ $("sc").textContent=(Math.round(pts*100)/100).toString().replace(".",",")+" / 10";
+ $("detail").textContent="Đúng "+ok+" / "+Q.length+" câu · Sai "+(Q.length-ok-un)+" · Bỏ trống "+un;
+ $("rank").textContent=pts>=8.5?"Xếp loại: Giỏi":pts>=7?"Xếp loại: Khá":pts>=5?"Xếp loại: Trung bình":"Chưa đạt – hãy ôn lại và thử lại nhé!";
+ $("quiz").classList.add("hide");$("result").classList.remove("hide");
+ window.scrollTo(0,0);
+}
+(function(){const s=load();if(s&&s.Q&&s.Q.length){Q=s.Q;ans=s.ans;T0=s.T0;done=s.done;cur=0;
+ if(done){$("start").classList.add("hide");$("quiz").classList.add("hide");$("result").classList.remove("hide");showResult()}else begin()}})();
+</script>
+</body>
+</html>
